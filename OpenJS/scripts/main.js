@@ -12,13 +12,16 @@ task.thread(function() {
   task.wait(1)
 
   LoadScript("libs/libluckperms.js");
-  log.info("libluckperms.js dimuat.");
+  log.info("&l&alibluckperms.js dimuat.");
 
   LoadScript("libs/libkelas.js")
-  log.info("libkelas.js dimuat.")
+  log.info("&l&alibkelas.js dimuat.")
+
+  LoadScript("libs/libtugas.js")
+  log.info("&l&alibtugas.js dimuat.")
 
   LoadScript("handler/command.js")
-  log.info("command.js dimuat.")
+  log.info("&l&acommand.js dimuat.")
 })
 
 log.info("System Success startup!!")
@@ -27,5 +30,6 @@ task.bindToUnload(function() {
   log.info("[System] : Unloaded Script...")
   UnloadScript("libs/libkelas.js")
   UnloadScript("libs/libluckperms.js")
+  UnloadScript("libs/libtugas.js")
   UnloadScript("handler/command.js")
 })
