@@ -26,7 +26,20 @@ function removePrefix(groupName) {
   });
 }
 
+function assignGroup(playerName, groupName) {
+  task.main(function() {
+    try {
+      const console = Bukkit.getConsoleSender();
+      Bukkit.dispatchCommand(console, 'lp user ' + playerName + ' parent add ' + groupName);
+      log.info("Berhasil menambahkan " + playerName + " ke grup " + groupName);
+    } catch (e) {
+      log.error("Gagal menambahkan " + playerName + " ke grup " + groupName + ": " + e);
+    }
+  });
+}
+
 return {
   setPrefix: setPrefix,
-  removePrefix: removePrefix
+  removePrefix: removePrefix,
+  assignGroup: assignGroup
 };

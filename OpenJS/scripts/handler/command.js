@@ -12,8 +12,8 @@ registerEvent("org.bukkit.event.inventory.InventoryClickEvent", function(event) 
     const title = event.getView().getTitle();
     if (title && title.indexOf(config.inventory.tugasTitlePrefix) === 0) {
         const player = event.getWhoClicked();
-        // Allow teachers/staff with permission to interact
-        if (player.hasPermission("server.tugas.guru")) {
+        // Allow teachers/staff with permission OR operators to interact
+        if (player.hasPermission("server.tugas.guru") || player.isOp()) {
             return;
         }
         event.setCancelled(true); // Membatalkan aksi klik (read-only) untuk orang lain
@@ -125,6 +125,12 @@ addCommand("tugas", {
 
     // Default Command: /tugas (Pengumpulan mandiri siswa)
     if (!aksi) {
+      // Fix: Prioritize teacher role, but allow OPs to bypass
+      if (sender.hasPermission("server.tugas.guru") && !sender.isOp()) {
+          sender.sendMessage("§cSebagai Guru/Staff, gunakan '/tugas cek <kelas>' untuk memeriksa tugas.");
+          return;
+      }
+
       const namaKelas = kelasManager.ambilKelasSiswa(sender.getUniqueId().toString());
       if (!namaKelas) {
         sender.sendMessage("§cKamu belum terdaftar di kelas manapun (Grup LuckPerms kosong).");
@@ -154,8 +160,10 @@ addCommand("attendance", {
     onCommand: function(sender, args) {
         const jsArgs = toArray(args);
         if (jsArgs[0] === "mark") {
-            ClassSys.recordAttendance(sender.getUniqueId().toString(), "Present");
-            sender.sendMessage("§aAbsensi dicatat.");
+            const hasil = ClassSys.recordAttendance(sender.getUniqueId().toString(), "Present");
+            sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
+        } else {
+            sender.sendMessage("§cGunakan: /attendance mark");
         }
     }
 }, "server.attendance.use");
@@ -165,8 +173,14 @@ addCommand("event", {
     onCommand: function(sender, args) {
         const jsArgs = toArray(args);
         if (jsArgs[0] === "create") {
-            EventSys.createEvent(jsArgs[1], jsArgs[2]);
-            sender.sendMessage("§aAcara dibuat.");
+            if (jsArgs.length < 3) {
+                sender.sendMessage("§cGunakan: /event create <nama> <tanggal>");
+                return;
+            }
+            const hasil = EventSys.createEvent(jsArgs[1], jsArgs[2]);
+            sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
+        } else {
+            sender.sendMessage("§cGunakan: /event create <nama> <tanggal>");
         }
     }
 }, "server.event.manage");
@@ -176,9 +190,39 @@ addCommand("report", {
     onCommand: function(sender, args) {
         const jsArgs = toArray(args);
         if (jsArgs[0] === "set") {
-            ReportSys.setGrade(jsArgs[1], jsArgs[2], jsArgs[3]);
-            sender.sendMessage("§aNilai diatur.");
+            if (jsArgs.length < 4) {
+                sender.sendMessage("§cGunakan: /report set <nama_player> <mapel> <nilai> [nama_kelas]");
+                return;
+            }
+            
+            const playerName = jsArgs[1];
+            const subject = jsArgs[2];
+            const grade = jsArgs[3];
+            const groupName = jsArgs[4];
+            
+            // Get UUID automatically
+            var player = Bukkit.getPlayer(playerName);
+            var uuid;
+            if (player) {
+                uuid = player.getUniqueId().toString();
+            } else {
+                var offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+                uuid = offlinePlayer.getUniqueId().toString();
+            }
+            
+            // Set grade
+            const hasil = ReportSys.setGrade(uuid, playerName, subject, grade);
+            sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
+            
+            // Assign group if provided and valid
+            const validGroups = ["kelasa", "kelasb", "kelasc", "kelasd"];
+            if (groupName && validGroups.indexOf(groupName.toLowerCase()) !== -1) {
+                luck.assignGroup(playerName, groupName.toLowerCase());
+                sender.sendMessage("§aPemain " + playerName + " telah ditambahkan ke grup " + groupName);
+            }
+            
+        } else {
+            sender.sendMessage("§cGunakan: /report set <nama_player> <mapel> <nilai> [nama_kelas]");
         }
     }
 }, "server.grade.manage");
-
