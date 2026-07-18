@@ -74,52 +74,57 @@ function simpanChestInventory(namaKelas, inv) {
 }
 
 function submitTugas(player, namaKelas) {
-  var itemDiTangan = player.getInventory().getItemInMainHand();
+  try {
+    var itemDiTangan = player.getInventory().getItemInMainHand();
   
-  if (itemDiTangan === null || itemDiTangan.getType() === Material.AIR){
-    return { sukses: false, pesan: "Kamu tidak memegang buku apapun." };
-  }
+    if (itemDiTangan === null || itemDiTangan.getType() === Material.AIR){
+      return { sukses: false, pesan: "Kamu tidak memegang buku apapun." };
+    }
 
-  var tipe = itemDiTangan.getType();
-  if (tipe !== Material.WRITTEN_BOOK && tipe !== Material.WRITABLE_BOOK) {
-    return { sukses: false, pesan: "Item di tangan bukan Book and Quill / Written Book" };
-  }
+    var tipe = itemDiTangan.getType();
+    if (tipe !== Material.WRITTEN_BOOK && tipe !== Material.WRITABLE_BOOK) {
+      return { sukses: false, pesan: "Item di tangan bukan Book and Quill / Written Book" };
+    }
 
-  if (tipe === Material.WRITABLE_BOOK) {
-    return { sukses: false, pesan: "Buku belum ditandatangani (sign). Tanda tangani dulu sebelum submit" };
-  }
+    if (tipe === Material.WRITABLE_BOOK) {
+      return { sukses: false, pesan: "Buku belum ditandatangani (sign). Tanda tangani dulu sebelum submit" };
+    }
 
-  var inv = getChestInventory(namaKelas);
-  var slotKosong = inv.firstEmpty();
+    var inv = getChestInventory(namaKelas);
+    var slotKosong = inv.firstEmpty();
 
-  if (slotKosong === -1) {
-    return { sukses: false, pesan: "Chest Tugas " + namaKelas + " Penuh. Hubungi Guru"};
-  }
+    if (slotKosong === -1) {
+      return { sukses: false, pesan: "Chest Tugas " + namaKelas + " Penuh. Hubungi Guru"};
+    }
 
-  var bookMeta = itemDiTangan.getItemMeta();
-  var judulTugas = bookMeta.hasTitle() ? bookMeta.getTitle() : "(tanpa judul)";
+    var bookMeta = itemDiTangan.getItemMeta();
+    var judulTugas = bookMeta.hasTitle() ? bookMeta.getTitle() : "(tanpa judul)";
 
-  var loreBaru = new java.util.ArrayList();
-  loreBaru.add("§7Dikumpulkan oleh: §f" + player.getName());
-  loreBaru.add("§7Waktu: §f" + new Date().toLocaleString());
-  bookMeta.setLore(loreBaru);
-  itemDiTangan.setItemMeta(bookMeta);
+    var loreBaru = new java.util.ArrayList();
+    loreBaru.add("§7Dikumpulkan oleh: §f" + player.getName());
+    loreBaru.add("§7Waktu: §f" + new Date().toLocaleString());
+    bookMeta.setLore(loreBaru);
+    itemDiTangan.setItemMeta(bookMeta);
 
-  var itemUntukDisimpan = itemDiTangan.clone();
-  itemUntukDisimpan.setAmount(1); // PERBAIKAN: setAmounf -> setAmount
+    var itemUntukDisimpan = itemDiTangan.clone();
+    itemUntukDisimpan.setAmount(1);
 
-  inv.setItem(slotKosong, itemUntukDisimpan);
-  simpanChestInventory(namaKelas, inv);
+    inv.setItem(slotKosong, itemUntukDisimpan);
+    simpanChestInventory(namaKelas, inv);
   
-  var jumlahSekarang = itemDiTangan.getAmount();
-  if (jumlahSekarang <= 1) {
-    player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-  } else {
-    itemDiTangan.setAmount(jumlahSekarang - 1);
-    player.getInventory().setItemInMainHand(itemDiTangan);
-  }
+    var jumlahSekarang = itemDiTangan.getAmount();
+    if (jumlahSekarang <= 1) {
+      player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+    } else {
+      itemDiTangan.setAmount(jumlahSekarang - 1);
+      player.getInventory().setItemInMainHand(itemDiTangan);
+    }
 
-  return { sukses: true, pesan: "Tugas " + judulTugas + " berhasil dikumpulkan ke kelas " + namaKelas + "." };
+    return { sukses: true, pesan: "Tugas " + judulTugas + " berhasil dikumpulkan ke kelas " + namaKelas + "." };
+  } catch (e) {
+    log.error("Gagal submit tugas: " + e);
+    return { sukses: false, pesan: "Terjadi kesalahan sistem saat mengumpulkan tugas." };
+  }
 }
 
 function bukaChestUntukGuru(guru, namaKelas) {

@@ -11,35 +11,45 @@ const ReportSys = requireScript("../libs/libreportcard.js");
 registerEvent("org.bukkit.event.inventory.InventoryClickEvent", function(event) {
     const title = event.getView().getTitle();
     if (title && title.indexOf(config.inventory.tugasTitlePrefix) === 0) {
-        event.setCancelled(true); // Membatalkan aksi klik (read-only)
+        const player = event.getWhoClicked();
+        // Allow teachers/staff with permission to interact
+        if (player.hasPermission("server.tugas.guru")) {
+            return;
+        }
+        event.setCancelled(true); // Membatalkan aksi klik (read-only) untuk orang lain
     }
 });
 
 // --- COMMAND: /kelas ---
 addCommand("kelas", {
   onCommand: function(sender, args) {
-    const jsArgs = toArray(args);
-    const aksi = jsArgs[0];
-    const restArgs = jsArgs.slice(1);
+    try {
+        const jsArgs = toArray(args);
+        const aksi = jsArgs[0];
+        const restArgs = jsArgs.slice(1);
 
-    switch (aksi) {
-      case "tambah":
-        if (!restArgs[0]) {
-            sender.sendMessage("§cGunakan: /kelas tambah <nama_kelas> [weight]");
-            return;
+        switch (aksi) {
+        case "tambah":
+            if (!restArgs[0]) {
+                sender.sendMessage("§cGunakan: /kelas tambah <nama_kelas> [weight]");
+                return;
+            }
+            kelasManager.addGroup(restArgs[0], restArgs[1] ? parseInt(restArgs[1]) : 0);
+            sender.sendMessage("§aKelas " + restArgs[0] + " berhasil dibuat di LuckPerms.");
+            break;
+        case "hapus":
+            if (!restArgs[0]) {
+                sender.sendMessage("§cGunakan: /kelas hapus <nama_kelas>");
+                return;
+            }
+            kelasManager.removeGroup(restArgs[0], sender);
+            break;
+        default:
+            sender.sendMessage("§cGunakan: /kelas tambah|hapus");
         }
-        kelasManager.addGroup(restArgs[0], restArgs[1] ? parseInt(restArgs[1]) : 0);
-        sender.sendMessage("§aKelas " + restArgs[0] + " berhasil dibuat di LuckPerms.");
-        break;
-      case "hapus":
-        if (!restArgs[0]) {
-            sender.sendMessage("§cGunakan: /kelas hapus <nama_kelas>");
-            return;
-        }
-        kelasManager.removeGroup(restArgs[0], sender);
-        break;
-      default:
-        sender.sendMessage("§cGunakan: /kelas tambah|hapus");
+    } catch (e) {
+        sender.sendMessage("§cTerjadi kesalahan saat memproses command kelas.");
+        log.error("Command /kelas error: " + e);
     }
   }
 }, "under.manage");

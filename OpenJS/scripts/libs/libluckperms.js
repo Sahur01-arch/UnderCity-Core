@@ -3,19 +3,26 @@ const Bukkit = importClass("org.bukkit.Bukkit")
 
 function setPrefix(groupName, prefixText) {
   const safeText = prefixText.replace(/"/g, "");
-  const cmd = 'lp group ' + groupName + ' meta setprefix "' + safeText + '"';
-  log.info("DEBUG cmd = " + cmd);
+  log.info("DEBUG cmd = " + 'lp group ' + groupName + ' meta setprefix "' + safeText + '"');
 
   task.main(function() {
-    const console = Bukkit.getConsoleSender();
-    Bukkit.dispatchCommand(console, 'lp group ' + groupName + ' meta setprefix "' + safeText + '"');
+    try {
+      const console = Bukkit.getConsoleSender();
+      Bukkit.dispatchCommand(console, 'lp group ' + groupName + ' meta setprefix "' + safeText + '"');
+    } catch (e) {
+      log.error("Gagal menetapkan prefix untuk " + groupName + ": " + e);
+    }
   });
 }
 
 function removePrefix(groupName) {
   task.main(function() {
-    const console = Bukkit.getConsoleSender();
-    Bukkit.dispatchCommand(console, console, 'lp group ' + groupName + ' meta setprefix ""');
+    try {
+      const console = Bukkit.getConsoleSender();
+      Bukkit.dispatchCommand(console, 'lp group ' + groupName + ' meta setprefix ""');
+    } catch (e) {
+      log.error("Gagal menghapus prefix untuk " + groupName + ": " + e);
+    }
   });
 }
 

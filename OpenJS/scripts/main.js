@@ -1,39 +1,48 @@
 //!waitForInit
 const Bukkit = importClass("org.bukkit.Bukkit");
 
-log.info("Init Startup.....")
+log.info("[System] Initializing startup sequence...");
 
-// Plugin init
-task.waitForPlugin("LuckPerms")
-log.info("Depedency Loaded!")
+// 1. Wait for required plugins
+task.waitForPlugin("LuckPerms");
+log.info("[System] Dependencies loaded.");
 
-// Library init
+// 2. Perform loading in a dedicated thread to avoid blocking main thread
 task.thread(function() {
-  task.wait(1)
+    log.info("[System] Starting module loading...");
 
-  try {
-    LoadScript("libs/libluckperms.js");
-    LoadScript("libs/libkelas.js");
-    LoadScript("libs/libtugas.js");
-    LoadScript("libs/libclass.js");
-    LoadScript("libs/libeventschool.js");
-    LoadScript("libs/libreportcard.js");
-    LoadScript("handler/command.js");
-    log.info("&l&aAll modules loaded successfully.");
-  } catch (e) {
-    log.error("Error loading modules: " + e);
-  }
-})
+    const scriptsToLoad = [
+        "libs/libluckperms.js",
+        "libs/libkelas.js",
+        "libs/libtugas.js",
+        "libs/libclass.js",
+        "libs/libeventschool.js",
+        "libs/libreportcard.js",
+        "handler/command.js"
+    ];
 
-log.info("System Success startup!!")
+    for (var i = 0; i < scriptsToLoad.length; i++) {
+        var scriptPath = scriptsToLoad[i];
+        try {
+            LoadScript(scriptPath);
+            log.info("[System] Successfully loaded: " + scriptPath);
+        } catch (e) {
+            log.error("[System] Failed to load " + scriptPath + ": " + e);
+        }
+    }
+
+    log.info("[System] All modules initialized successfully.");
+});
 
 task.bindToUnload(function() {
-  log.info("[System] : Unloaded Script...")
-  UnloadScript("libs/libkelas.js")
-  UnloadScript("libs/libluckperms.js")
-  UnloadScript("libs/libtugas.js")
-  UnloadScript("libs/libclass.js")
-  UnloadScript("libs/libeventschool.js")
-  UnloadScript("libs/libreportcard.js")
-  UnloadScript("handler/command.js")
-})
+    log.info("[System] Unloading modules...");
+    // Unload in reverse order
+    UnloadScript("handler/command.js");
+    UnloadScript("libs/libreportcard.js");
+    UnloadScript("libs/libeventschool.js");
+    UnloadScript("libs/libclass.js");
+    UnloadScript("libs/libtugas.js");
+    UnloadScript("libs/libkelas.js");
+    UnloadScript("libs/libluckperms.js");
+    log.info("[System] Cleanup complete.");
+});
