@@ -6,6 +6,8 @@ const LuckPermsProvider = importClass("net.luckperms.api.LuckPermsProvider");
 
 task.waitForPlugin("LuckPerms");
 
+var daftarKelas = ["kelasa", "kelasb", "kelasc", "kelasd"]
+
 function addGroup(name, weight) {
   weight = (typeof weight === "number") ? weight : 0;
 
@@ -43,19 +45,51 @@ function ambilKelasSiswa(uuidString) {
     var user = luckPerms.getUserManager().getUser(uuid);
 
     if (user === null) {
-      // Jika user belum dimuat di memori, load manual secara sinkron/cepat
       var future = luckPerms.getUserManager().loadUser(uuid);
-      user = future.join(); 
+      user.future.join();
     }
 
     if (user !== null) {
-      // Mengambil group primary (biasanya kelas siswa)
-      return user.getPrimaryGroup();
+      var nodes = user.getNodes();
+      var daftarGrup = [];
+
+      var iterator = nodes.iterator();
+      while (iterator.hasNext()) {
+        var node = iterator.next();
+        if (node.getType().toString() === "INHERITANCE") {
+          daftarGrup.push(node.getGroupName());
+        }
+      }
+
+      for (var i = 0; i < daftarGrup.length; i++) {
+        if (daftarKelas.indexOf(daftarGrup[i]) !== -1) {
+          return daftarGrup[i];
+        }
+      }
     }
   } catch (e) {
-    log.error("Gagal mengambil data kelas untuk UUID: " + uuidString + ". Error: " + e);
+    log.info("Gagal mengambil data kelas untuk UUID: " + uuidString + ".Error " + e);
   }
   return null;
+}
+
+function cekKelasValid(sender) {
+  if (sender.isOp() || sender.hasPermission("under.tugas.bypass")) {
+    return { valid: true, kelas: "STAFF", pesan: "" };
+  }
+
+  var uuidString = sender.getUniqueId().toString();
+  var namaGrup = ambilKelasSiswa(uuidString);
+
+  if (!namaGrup || namaGrup === "default") {
+    return { valid: false, kelas: null, pesan: "kamu belum terdaftar di kelas manapun" };
+  }
+
+  if (daftarKelas.indexOf(namaGrup) === -1) {
+    return { valid: false, kelas: null, pesan: "Grup kamu ('" + namaGrup + "') bukan kelas yang valid untuk submit tugas." };
+  }
+
+  return { valid: true, kelas: namaGrup, pesan: "" };
 }
 
 return {
