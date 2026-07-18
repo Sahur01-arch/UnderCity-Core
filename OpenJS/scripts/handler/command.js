@@ -1,12 +1,16 @@
 //!loadmanually
-var kelasManager = requireScript("../libs/libkelas.js");
-var luck = requireScript("../libs/libluckperms.js");
-var Tugas = requireScript("../libs/libtugas.js");
+const kelasManager = requireScript("../libs/libkelas.js");
+const luck = requireScript("../libs/libluckperms.js");
+const Tugas = requireScript("../libs/libtugas.js");
+const config = requireScript("../libs/config.js");
+const ClassSys = requireScript("../libs/libclass.js");
+const EventSys = requireScript("../libs/libeventschool.js");
+const ReportSys = requireScript("../libs/libreportcard.js");
 
 // --- EVENT LISTENER (Cegah Siswa/Guru Mengambil Item dari Virtual Chest) ---
 registerEvent("org.bukkit.event.inventory.InventoryClickEvent", function(event) {
-    var title = event.getView().getTitle();
-    if (title && title.indexOf("§6Kumpulan Tugas-") === 0) {
+    const title = event.getView().getTitle();
+    if (title && title.indexOf(config.inventory.tugasTitlePrefix) === 0) {
         event.setCancelled(true); // Membatalkan aksi klik (read-only)
     }
 });
@@ -14,9 +18,9 @@ registerEvent("org.bukkit.event.inventory.InventoryClickEvent", function(event) 
 // --- COMMAND: /kelas ---
 addCommand("kelas", {
   onCommand: function(sender, args) {
-    var jsArgs = toArray(args);
-    var aksi = jsArgs[0];
-    var restArgs = jsArgs.slice(1);
+    const jsArgs = toArray(args);
+    const aksi = jsArgs[0];
+    const restArgs = jsArgs.slice(1);
 
     switch (aksi) {
       case "tambah":
@@ -48,10 +52,10 @@ addCommand("lpgroup", {
       return;
     }
 
-    var jsArgs = toArray(args);
-    var aksi = jsArgs[0];
-    var groupName = jsArgs[1];
-    var textPrefix = jsArgs.slice(2).join(" ");
+    const jsArgs = toArray(args);
+    const aksi = jsArgs[0];
+    const groupName = jsArgs[1];
+    const textPrefix = jsArgs.slice(2).join(" ");
 
     switch (aksi) {
       case "setprefix":
@@ -74,7 +78,7 @@ addCommand("lpgroup", {
   },
 
   onTabComplete: function(sender, args) {
-    var jsArgs = toArray(args);
+    const jsArgs = toArray(args);
     if (jsArgs.length === 1) {
       return toJavaList(["setprefix", "removeprefix"]);
     }
@@ -85,13 +89,13 @@ addCommand("lpgroup", {
 // --- COMMAND: /tugas ---
 addCommand("tugas", {
   onCommand: function(sender, args) {
-    if (!(sender instanceof org.bukkit.entity.Player)) { // PERBAIKAN: instanceOf -> instanceof
+    if (!(sender instanceof org.bukkit.entity.Player)) { 
       sender.sendMessage("§cCommand ini hanya bisa dijalankan di in-game.");
       return;
     }
 
-    var jsArgs = toArray(args);
-    var aksi = jsArgs[0];
+    const jsArgs = toArray(args);
+    const aksi = jsArgs[0];
 
     // Subcommand: /tugas cek <kelas> (Guru/Staff saja)
     if (aksi === "cek") {
@@ -111,14 +115,14 @@ addCommand("tugas", {
 
     // Default Command: /tugas (Pengumpulan mandiri siswa)
     if (!aksi) {
-      var namaKelas = kelasManager.ambilKelasSiswa(sender.getUniqueId().toString());
+      const namaKelas = kelasManager.ambilKelasSiswa(sender.getUniqueId().toString());
       if (!namaKelas) {
         sender.sendMessage("§cKamu belum terdaftar di kelas manapun (Grup LuckPerms kosong).");
         return;
       }
 
       task.main(function() {
-        var hasil = Tugas.submitTugas(sender, namaKelas);
+        const hasil = Tugas.submitTugas(sender, namaKelas);
         sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
       });
       return;
@@ -127,11 +131,44 @@ addCommand("tugas", {
     sender.sendMessage("§cGunakan: /tugas (untuk submit) atau /tugas cek <kelas> (khusus guru)");
   },
   onTabComplete: function(sender, args) {
-    var jsArgs = toArray(args);
+    const jsArgs = toArray(args);
     if (jsArgs.length === 1 && sender.hasPermission("server.tugas.guru")) {
       return toJavaList(["cek"]);
     }
     return toJavaList([]);
   }
 }, "server.tugas.use");
+
+// --- COMMAND: /attendance ---
+addCommand("attendance", {
+    onCommand: function(sender, args) {
+        const jsArgs = toArray(args);
+        if (jsArgs[0] === "mark") {
+            ClassSys.recordAttendance(sender.getUniqueId().toString(), "Present");
+            sender.sendMessage("§aAbsensi dicatat.");
+        }
+    }
+}, "server.attendance.use");
+
+// --- COMMAND: /event ---
+addCommand("event", {
+    onCommand: function(sender, args) {
+        const jsArgs = toArray(args);
+        if (jsArgs[0] === "create") {
+            EventSys.createEvent(jsArgs[1], jsArgs[2]);
+            sender.sendMessage("§aAcara dibuat.");
+        }
+    }
+}, "server.event.manage");
+
+// --- COMMAND: /report ---
+addCommand("report", {
+    onCommand: function(sender, args) {
+        const jsArgs = toArray(args);
+        if (jsArgs[0] === "set") {
+            ReportSys.setGrade(jsArgs[1], jsArgs[2], jsArgs[3]);
+            sender.sendMessage("§aNilai diatur.");
+        }
+    }
+}, "server.grade.manage");
 

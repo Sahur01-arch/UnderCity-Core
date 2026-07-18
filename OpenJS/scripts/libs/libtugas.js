@@ -61,14 +61,16 @@ function getChestInventory(namaKelas) {
 }
 
 function simpanChestInventory(namaKelas, inv) {
-  var fileName = "tugas_data";
-  DiskApi.loadFile(fileName, false, false);
+  task.spawn(function() {
+    var fileName = "tugas_data";
+    DiskApi.loadFile(fileName, true, false); // Async load
 
-  var contents = inv.getContents();
-  var serialized = serializeItem(contents);
+    var contents = inv.getContents();
+    var serialized = serializeItem(contents);
 
-  DiskApi.setVar(fileName, namaKelas, serialized, false);
-  DiskApi.saveFile(fileName, false, false);
+    DiskApi.setVar(fileName, namaKelas, serialized, false);
+    DiskApi.saveFile(fileName, true, false); // Async save
+  });
 }
 
 function submitTugas(player, namaKelas) {

@@ -15,7 +15,7 @@ function addGroup(name, weight) {
     var console = Bukkit.getConsoleSender();
 
     Bukkit.dispatchCommand(console, "lp creategroup " + name);
-    task.wait(1);
+    // task.wait(1); // Removed: task.wait(1) cannot be used in task.main
     Bukkit.dispatchCommand(console, "lp group " + name + " setweight " + weight);
   });
 
@@ -46,7 +46,7 @@ function ambilKelasSiswa(uuidString) {
 
     if (user === null) {
       var future = luckPerms.getUserManager().loadUser(uuid);
-      user.future.join();
+      user = future.join(); // Fixed: assigned result of future.join()
     }
 
     if (user !== null) {
