@@ -1,4 +1,5 @@
 //!loadmanually
+const Bukkit = importClass("org.bukkit.Bukkit");
 const kelasManager = requireScript("../libs/libkelas.js");
 const luck = requireScript("../libs/libluckperms.js");
 const Tugas = requireScript("../libs/libtugas.js");
@@ -224,5 +225,15 @@ addCommand("report", {
         } else {
             sender.sendMessage("§cGunakan: /report set <nama_player> <mapel> <nilai> [nama_kelas]");
         }
+    }
+    onTabComplete: function(sender, args) {
+        const jsArgs = toArray(args);
+        if (jsArgs.length === 1) {
+            return toJavaList(["set"]);
+        }
+        if (jsArgs.length === 5 && jsArgs[0] === "set") {
+            return toJavaList(["kelasa", "kelasb", "kelasc", "kelasd"]);
+        }
+        return toJavaList([]);
     }
 }, "server.grade.manage");

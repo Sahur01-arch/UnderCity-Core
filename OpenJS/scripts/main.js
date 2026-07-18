@@ -9,6 +9,7 @@ log.info("[System] Dependencies loaded.");
 
 // 2. Perform loading in a dedicated thread to avoid blocking main thread
 task.thread(function() {
+    task.wait(1); // ADDED: Delay to allow initialization to finish
     log.info("[System] Starting module loading...");
 
     const scriptsToLoad = [
