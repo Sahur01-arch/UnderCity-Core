@@ -190,7 +190,9 @@ addCommand("event", {
 addCommand("report", {
     onCommand: function(sender, args) {
         const jsArgs = toArray(args);
-        if (jsArgs[0] === "set") {
+        const aksi = jsArgs[0];
+
+        if (aksi === "set") {
             if (jsArgs.length < 4) {
                 sender.sendMessage("§cGunakan: /report set <nama_player> <mapel> <nilai> [nama_kelas]");
                 return;
@@ -201,7 +203,6 @@ addCommand("report", {
             const grade = jsArgs[3];
             const groupName = jsArgs[4];
             
-            // Get UUID automatically
             var player = Bukkit.getPlayer(playerName);
             var uuid;
             if (player) {
@@ -211,25 +212,57 @@ addCommand("report", {
                 uuid = offlinePlayer.getUniqueId().toString();
             }
             
-            // Set grade
             const hasil = ReportSys.setGrade(uuid, playerName, subject, grade);
             sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
             
-            // Assign group if provided and valid
             const validGroups = ["kelasa", "kelasb", "kelasc", "kelasd"];
             if (groupName && validGroups.indexOf(groupName.toLowerCase()) !== -1) {
                 luck.assignGroup(playerName, groupName.toLowerCase());
                 sender.sendMessage("§aPemain " + playerName + " telah ditambahkan ke grup " + groupName);
             }
             
+        } else if (aksi === "view") {
+            if (jsArgs.length < 2) {
+                sender.sendMessage("§cGunakan: /report view <nama_player>");
+                return;
+            }
+
+            const playerName = jsArgs[1];
+            var player = Bukkit.getPlayer(playerName);
+            var uuid;
+            if (player) {
+                uuid = player.getUniqueId().toString();
+            } else {
+                var offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+                uuid = offlinePlayer.getUniqueId().toString();
+            }
+
+            // Memanggil fungsi getReport dari libreportcard.js
+            const rapor = ReportSys.getReport(uuid);
+
+            if (!rapor) {
+                sender.sendMessage("§cData rapor untuk " + playerName + " tidak ditemukan.");
+                return;
+            }
+
+            sender.sendMessage("§e=== RAPOR " + rapor.name.toUpperCase() + " ===");
+            sender.sendMessage("§7UUID: " + rapor.uuid);
+            sender.sendMessage("§6Daftar Nilai:");
+            
+            for (var mapel in rapor.grades) {
+                sender.sendMessage(" §7- " + mapel + ": §f" + rapor.grades[mapel]);
+            }
+            sender.sendMessage("§bNilai Rata-rata: §e" + rapor.average);
+            sender.sendMessage("§e========================");
+
         } else {
-            sender.sendMessage("§cGunakan: /report set <nama_player> <mapel> <nilai> [nama_kelas]");
+            sender.sendMessage("§cGunakan: /report set atau /report view");
         }
-    }
+    },
     onTabComplete: function(sender, args) {
         const jsArgs = toArray(args);
         if (jsArgs.length === 1) {
-            return toJavaList(["set"]);
+            return toJavaList(["set", "view"]); // Menambahkan 'view' di tab complete
         }
         if (jsArgs.length === 5 && jsArgs[0] === "set") {
             return toJavaList(["kelasa", "kelasb", "kelasc", "kelasd"]);
@@ -237,3 +270,4 @@ addCommand("report", {
         return toJavaList([]);
     }
 }, "server.grade.manage");
+
