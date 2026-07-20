@@ -35,8 +35,7 @@ addCommand("kelas", {
                 sender.sendMessage("§cGunakan: /kelas tambah <nama_kelas> [weight]");
                 return;
             }
-            kelasManager.addGroup(restArgs[0], restArgs[1] ? parseInt(restArgs[1]) : 0);
-            sender.sendMessage("§aKelas " + restArgs[0] + " berhasil dibuat di LuckPerms.");
+            kelasManager.addGroup(restArgs[0], restArgs[1] ? parseInt(restArgs[1]) : 0, sender);
             break;
         case "hapus":
             if (!restArgs[0]) {
@@ -74,13 +73,11 @@ addCommand("lpgroup", {
           sender.sendMessage("§cGunakan: /lpgroup setprefix <grup> <text>");
           return;
         }
-        luck.setPrefix(groupName, textPrefix);
-        sender.sendMessage("§aPrefix berhasil diterapkan.");
+        luck.setPrefix(groupName, textPrefix, sender);
         break;
 
       case "removeprefix":
-        luck.removePrefix(groupName);
-        sender.sendMessage("§aPrefix berhasil dihapus.");
+        luck.removePrefix(groupName, sender);
         break;
 
       default:
@@ -126,21 +123,23 @@ addCommand("tugas", {
 
     // Default Command: /tugas (Pengumpulan mandiri siswa)
     if (!aksi) {
-      // Fix: Prioritize teacher role, but allow OPs to bypass
       if (sender.hasPermission("server.tugas.guru") && !sender.isOp()) {
           sender.sendMessage("§cSebagai Guru/Staff, gunakan '/tugas cek <kelas>' untuk memeriksa tugas.");
           return;
       }
 
-      const namaKelas = kelasManager.ambilKelasSiswa(sender.getUniqueId().toString());
-      if (!namaKelas) {
-        sender.sendMessage("§cKamu belum terdaftar di kelas manapun (Grup LuckPerms kosong).");
-        return;
-      }
-
-      task.main(function() {
-        const hasil = Tugas.submitTugas(sender, namaKelas);
-        sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
+      task.spawn(function() {
+        const namaKelas = kelasManager.ambilKelasSiswa(sender.getUniqueId().toString());
+        if (!namaKelas) {
+          task.main(function() {
+            sender.sendMessage("§cKamu belum terdaftar di kelas manapun (Grup LuckPerms kosong).");
+          });
+          return;
+        }
+        task.main(function() {
+          const hasil = Tugas.submitTugas(sender, namaKelas);
+          sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
+        });
       });
       return;
     }
@@ -217,8 +216,7 @@ addCommand("report", {
             
             const validGroups = ["kelasa", "kelasb", "kelasc", "kelasd"];
             if (groupName && validGroups.indexOf(groupName.toLowerCase()) !== -1) {
-                luck.assignGroup(playerName, groupName.toLowerCase());
-                sender.sendMessage("§aPemain " + playerName + " telah ditambahkan ke grup " + groupName);
+                luck.assignGroup(playerName, groupName.toLowerCase(), sender);
             }
             
         } else if (aksi === "view") {

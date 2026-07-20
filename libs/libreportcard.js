@@ -27,14 +27,9 @@ function setGrade(uuid, playerName, subject, grade) {
     
     try {
         loadData();
-        // 1. Ambil data mentah berupa String dari DiskApi
-        var rawRecord = DiskApi.getVar(FILENAME, uuid, null, false);
-        var record;
+        var record = DiskApi.getVar(FILENAME, uuid, null, false);
 
-        // 2. Jika data ada, parse dari JSON string. Jika tidak, buat object baru
-        if (rawRecord) {
-            record = JSON.parse(rawRecord);
-        } else {
+        if (!record) {
             record = { uuid: uuid, name: playerName, grades: {}, average: 0 };
         }
         
@@ -42,8 +37,7 @@ function setGrade(uuid, playerName, subject, grade) {
         record.grades[subject] = grade;
         record.average = calculateAverage(record.grades);
         
-        // 3. Ubah object menjadi string JSON sebelum disimpan
-        DiskApi.setVar(FILENAME, uuid, JSON.stringify(record), false);
+        DiskApi.setVar(FILENAME, uuid, record, false);
         saveData();
         
         log.info("[libreportcard] Nilai " + subject + " diatur ke " + grade + " untuk " + playerName + " (" + uuid + ")");
@@ -57,9 +51,7 @@ function setGrade(uuid, playerName, subject, grade) {
 function getReport(uuid) {
   if (!uuid) return null;
   loadData();
-  var rawRecord = DiskApi.getVar(FILENAME, uuid, null, false);
-
-  return rawRecord ? JSON.parse(rawRecord) : null;
+  return DiskApi.getVar(FILENAME, uuid, null, false);
 }
 
 return {

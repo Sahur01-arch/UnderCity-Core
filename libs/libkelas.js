@@ -4,25 +4,26 @@
 var Bukkit = importClass("org.bukkit.Bukkit");
 const LuckPermsProvider = importClass("net.luckperms.api.LuckPermsProvider");
 
-task.waitForPlugin("LuckPerms");
-
 var daftarKelas = ["kelasa", "kelasb", "kelasc", "kelasd"]
 
-function addGroup(name, weight) {
+function addGroup(name, weight, sender) {
   weight = (typeof weight === "number") ? weight : 0;
 
   task.main(function() {
-    var console = Bukkit.getConsoleSender();
-
-    Bukkit.dispatchCommand(console, "lp creategroup " + name);
-    // task.wait(1); // Removed: task.wait(1) cannot be used in task.main
-    Bukkit.dispatchCommand(console, "lp group " + name + " setweight " + weight);
+    try {
+      var console = Bukkit.getConsoleSender();
+      Bukkit.dispatchCommand(console, "lp creategroup " + name);
+      Bukkit.dispatchCommand(console, "lp group " + name + " setweight " + weight);
+      log.info("Grup " + name + " weight " + weight);
+      if (sender) sender.sendMessage("§aKelas " + name + " berhasil dibuat di LuckPerms.");
+    } catch (e) {
+      log.error("Gagal membuat grup " + name + ": " + e);
+      if (sender) sender.sendMessage("§cGagal membuat kelas: " + e);
+    }
   });
-
-  log.info("Grup " + name + " weight " + weight);
 }
 
-function removeGroup(name, sender) { // Menambahkan parameter sender agar command berjalan lancar
+function removeGroup(name, sender) {
   var luckPerms = LuckPermsProvider.get();
   var group = luckPerms.getGroupManager().getGroup(name);
 
@@ -32,8 +33,14 @@ function removeGroup(name, sender) { // Menambahkan parameter sender agar comman
   }
 
   task.main(function() {
-    var console = Bukkit.getConsoleSender();
-    Bukkit.dispatchCommand(console, "lp deletegroup " + name);
+    try {
+      var console = Bukkit.getConsoleSender();
+      Bukkit.dispatchCommand(console, "lp deletegroup " + name);
+      if (sender) sender.sendMessage("§aKelas " + name + " berhasil dihapus.");
+    } catch (e) {
+      log.error("Gagal menghapus grup " + name + ": " + e);
+      if (sender) sender.sendMessage("§cGagal menghapus kelas: " + e);
+    }
   });
 }
 
