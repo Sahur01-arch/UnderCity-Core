@@ -159,13 +159,58 @@ addCommand("tugas", {
 // --- COMMAND: /attendance ---
 addCommand("attendance", {
     onCommand: function(sender, args) {
-        const jsArgs = toArray(args);
-        if (jsArgs[0] === "mark") {
-            const hasil = ClassSys.recordAttendance(sender.getUniqueId().toString(), "Present");
+        var jsArgs = toArray(args);
+        var aksi = jsArgs[0];
+
+        if (aksi === "mark") {
+            if (!(sender instanceof org.bukkit.entity.Player)) {
+                sender.sendMessage("§cCommand ini hanya bisa dijalankan di in-game.");
+                return;
+            }
+            var hasil = ClassSys.recordAttendance(sender.getUniqueId().toString(), "Hadir");
             sender.sendMessage(hasil.sukses ? "§a" + hasil.pesan : "§c" + hasil.pesan);
-        } else {
-            sender.sendMessage("§cGunakan: /attendance mark");
+            return;
         }
+
+        if (aksi === "cek") {
+            if (!sender.hasPermission("server.attendance.guru")) {
+                sender.sendMessage("§cKamu tidak punya izin untuk melihat data absensi orang lain.");
+                return;
+            }
+            if (jsArgs.length < 2) {
+                sender.sendMessage("§cGunakan: /attendance cek <nama_player>");
+                return;
+            }
+
+            var targetName = jsArgs[1];
+            var targetPlayer = Bukkit.getOfflinePlayer(targetName);
+
+            if (!targetPlayer.hasPlayedBefore()) {
+                sender.sendMessage("§cPlayer '" + targetName + "' tidak ditemukan.");
+                return;
+            }
+
+            ClassSys.tampilkanAbsensi(sender, targetName, targetPlayer.getUniqueId().toString());
+            return;
+        }
+
+        sender.sendMessage("§cGunakan: /attendance mark (siswa) atau /attendance cek <player> (guru)");
+    },
+
+    onTabComplete: function(sender, args) {
+        var jsArgs = toArray(args);
+        if (jsArgs.length === 1) {
+            var opsi = ["mark"];
+            if (sender.hasPermission("server.attendance.guru")) opsi.push("cek");
+            return toJavaList(opsi);
+        }
+        if (jsArgs.length === 2 && jsArgs[0] === "cek") {
+            var names = [];
+            var players = Bukkit.getOnlinePlayers().toArray();
+            for (var i = 0; i < players.length; i++) names.push(players[i].getName());
+            return toJavaList(names);
+        }
+        return toJavaList([]);
     }
 }, "server.attendance.use");
 

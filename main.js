@@ -10,7 +10,6 @@ log.info("[System] Dependencies loaded.");
 // 2. Perform loading in a dedicated thread to avoid blocking main thread
 task.thread(function() {
     task.wait(1); // ADDED: Delay to allow initialization to finish
-    log.info("[System] Starting module loading...");
 
     const scriptsToLoad = [
         "libs/libluckperms.js",
@@ -22,17 +21,39 @@ task.thread(function() {
         "handler/command.js"
     ];
 
-    for (var i = 0; i < scriptsToLoad.length; i++) {
-        var scriptPath = scriptsToLoad[i];
-        try {
-            LoadScript(scriptPath);
-            log.info("[System] Successfully loaded: " + scriptPath);
-        } catch (e) {
-            log.error("[System] Failed to load " + scriptPath + ": " + e);
+    var maxRetries = 2;
+    var retryDelay = 10;
+
+    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+        var hasError = false;
+
+        if (attempt > 0) {
+            log.info("[System] Retry attempt " + attempt + "/" + maxRetries + " in " + retryDelay + " seconds...");
+            task.wait(retryDelay);
+        }
+
+        log.info("[System] Starting module loading (attempt " + (attempt + 1) + ")...");
+
+        for (var i = 0; i < scriptsToLoad.length; i++) {
+            var scriptPath = scriptsToLoad[i];
+            try {
+                LoadScript(scriptPath);
+                log.info("[System] Successfully loaded: " + scriptPath);
+            } catch (e) {
+                log.error("[System] Failed to load " + scriptPath + ": " + e);
+                hasError = true;
+            }
+        }
+
+        if (!hasError) {
+            log.info("[System] All modules initialized successfully.");
+            break;
+        }
+
+        if (attempt === maxRetries) {
+            log.error("[System] Failed to initialize after " + (maxRetries + 1) + " attempts. Giving up.");
         }
     }
-
-    log.info("[System] All modules initialized successfully.");
 });
 
 task.bindToUnload(function() {
